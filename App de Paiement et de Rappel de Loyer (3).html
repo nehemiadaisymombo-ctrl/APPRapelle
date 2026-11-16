@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>App de Paiement et de Rappel de Loyer</title>
+<meta name="theme-color" content="#6B3433">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Loyers">
+<style>
+:root{--primary:#6B3433;--gold:#B08D57;--bg-soft:#F9F8F6;--text-dark:#1F2937;--text-muted:#6B7280;--border:#E5E7EB;--danger:#991B1B;--danger-bg:#FEF2F2;--success:#065F46;--success-bg:#ECFDF5}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#fff;color:var(--text-dark);margin:0}
+.nw{white-space:nowrap}
+#splashScreen{position:fixed;inset:0;background:#fff;z-index:1000;display:flex;justify-content:center}
+.sp{text-align:center;width:100%;padding:0 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#5a5a5a}.sp h1{font-weight:400;font-size:clamp(1.5rem,7vw,2.2rem);line-height:1.2;letter-spacing:.02em;margin:0 0 6px}.sp svg{width:min(52vw,230px);height:auto;margin:6px 0}.sp-sub{font-family:Georgia,serif;font-size:1rem;letter-spacing:.03em;margin:0}.sp-foot{position:absolute;bottom:3%;left:0;right:0;font-size:.7rem;letter-spacing:.04em;margin:0;color:#6b6b6b}
+.btn-enter{position:absolute;bottom:11%;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;border:none;padding:14px 32px;border-radius:8px;font-size:.95rem;font-weight:600;width:80%;max-width:300px}
+#mainApp{display:none}
+header{background:var(--primary);color:#fff;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px}
+header img{width:26px;height:26px;filter:invert(1);mix-blend-mode:screen}
+#splashScreen img.bg{height:100%;max-width:100%;object-fit:contain}
+header h1{margin:0;font-size:1.1rem;text-transform:uppercase;letter-spacing:.5px}
+.nav-tabs{display:flex;background:#F3F4F6;border-bottom:1px solid var(--border)}
+.nav-tab{flex:1;padding:12px 8px;background:none;border:none;font-size:.85rem;font-weight:600;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:4px}
+.nav-tab img{width:28px;height:28px;mix-blend-mode:multiply;opacity:.55}
+.nav-tab.active{color:var(--primary);background:#fff;border-bottom:3px solid var(--primary)}
+.nav-tab.active img{opacity:1}
+.container{max-width:550px;margin:0 auto;padding:16px 16px 50px}
+.tab-content{display:none}.tab-content.active{display:block}
+.card{background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.card-title{margin:0 0 12px;font-size:.95rem;color:var(--primary);border-bottom:1px solid var(--border);padding-bottom:6px;text-transform:uppercase}
+label{display:block;font-size:.85rem;font-weight:600;margin-bottom:4px}
+.hint{font-size:.75rem;color:var(--text-muted);margin:-8px 0 12px}
+input,select,textarea{font-family:inherit;width:100%;padding:10px;margin-bottom:12px;border:1px solid #D1D5DB;border-radius:6px;background:#fff;font-size:1rem}
+.btn{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-weight:600;font-size:1rem}
+.btn-success{background:var(--success);margin-top:8px}
+.sub{font-size:.8rem;font-weight:700;color:var(--primary);text-transform:uppercase;margin:14px 0 8px}
+.sum{display:flex;gap:8px;margin-bottom:16px}
+.sum div{flex:1;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.sum b{display:block;font-size:1.05rem;margin-top:2px}
+.sum span{font-size:.72rem;color:var(--text-muted)}
+.tenant{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px}
+.t-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px}
+.t-head small{color:var(--text-muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.grid div{background:var(--bg-soft);border-radius:6px;padding:8px}
+.grid span{display:block;font-size:.7rem;color:var(--text-muted)}
+.grid b{font-size:.95rem;white-space:nowrap}
+.badge-dette,.badge-solde{padding:3px 8px;border-radius:4px;font-weight:700;font-size:.78rem;white-space:nowrap}
+.badge-dette{text-align:right;background:var(--danger-bg);color:var(--danger)}
+.badge-solde{background:var(--success-bg);color:var(--success)}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.acts a,.acts button{flex:1;min-width:80px;text-align:center;padding:9px 6px;border-radius:6px;border:none;color:#fff;font-size:.8rem;font-weight:700;text-decoration:none;white-space:nowrap}
+.a-call{background:#0284c7}.a-wa{background:#16a34a}.a-rec{background:var(--primary)}.a-del{background:#9CA3AF;flex:0 0 auto!important;min-width:44px!important}
+.empty{text-align:center;color:var(--text-muted);padding:24px 8px;font-size:.9rem}
+#zoneQuittance::before{content:"REÇU DE PAIEMENT DE LOYER";position:absolute;left:50%;top:50%;width:150%;text-align:center;transform:translate(-50%,-50%) rotate(-30deg);font-size:2.2rem;font-weight:800;line-height:1.2;color:rgba(107,52,51,.08);z-index:-1;pointer-events:none}
+#zoneQuittance{position:relative;overflow:hidden;isolation:isolate;display:none;background:#fff;padding:20px;border:1.5px solid #000;margin-top:16px;font-family:Arial,sans-serif;color:#000;font-size:.9rem}
+#zoneQuittance table{width:100%;border-collapse:collapse;margin:6px 0 12px}
+#zoneQuittance td{padding:6px 4px;border-bottom:1px solid #ddd;vertical-align:top}
+#zoneQuittance td:last-child{text-align:right;font-weight:700;white-space:nowrap}
+#zoneQuittance h4{margin:12px 0 2px;color:#6B3433;text-transform:uppercase;font-size:.8rem}
+.big{font-size:1.3rem;font-weight:700;margin:8px 0}
+#sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;align-items:flex-end}
+#sheet>div{background:#fff;width:100%;border-radius:16px 16px 0 0;padding:20px;text-align:center}
+#sheet .num{font-size:1.5rem;font-weight:700;margin:6px 0 14px;letter-spacing:1px}
+#sheet a,#sheet button{display:block;width:100%;padding:12px;border-radius:8px;border:none;font-weight:700;font-size:1rem;text-decoration:none;margin-top:8px;color:#fff}
+.rap{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.rap:last-child{border-bottom:none}.rap small{color:var(--text-muted)}
+.rap .acts{flex:0 0 auto;flex-wrap:nowrap}.rap .acts a,.rap .acts button{min-width:0;flex:0 0 auto;padding:8px 10px}
+.box{border-radius:8px;padding:10px 12px;margin-bottom:12px;border:1px solid}
+.box h3{margin:0 0 4px;font-size:.85rem;text-transform:uppercase}
+.box.red{background:var(--danger-bg);border-color:#FECACA;color:var(--danger)}.box.red .rap{color:var(--text-dark)}
+.box.amb{background:#FFFBEB;border-color:#FDE68A;color:#92400E}.box.amb .rap{color:var(--text-dark)}
+#rappelModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;align-items:center;justify-content:center;padding:16px}
+#rappelModal>div{background:#fff;border-radius:12px;padding:16px;width:100%;max-width:480px;max-height:85vh;overflow:auto}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:8px;font-size:.85rem;z-index:2000;display:none;max-width:90%;text-align:center}
+.row2{display:flex;gap:8px}
+.btn-sec{display:block;width:100%;padding:12px;border-radius:8px;border:1px solid var(--primary);background:#fff;color:var(--primary);font-weight:700;font-size:.95rem;margin-top:8px}
+#persistInfo,#iosHint{margin-top:10px}
+#backupInfo{font-size:.85rem;color:var(--text-muted);margin:6px 0}#backupInfo.warn{color:var(--danger);font-weight:600}
+@media print{body *{visibility:hidden}#zoneQuittance,#zoneQuittance *{visibility:visible}#zoneQuittance{position:absolute;left:0;top:0;width:100%}}
+</style>
+</head>
+<body>
+<div id="splashScreen">
+  <img class="bg" src="data:image/webp;base64,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" alt="App de paiement et de rappel de loyer">
+  <button class="btn-enter" onclick="ouvrirApp()">Accéder à l'espace</button>
+</div>
+<div id="mainApp">
+  <header><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAGFBMVEX////9/f319fW6uroxMTEEBAQBAQEAAAB5N7chAAABzklEQVR42u1UTW/TQBB9YyOwkZLdRaAqUmKa5EiVpi2HHFBVKeXAjZ/JfyASAs41CImPS6MmjVABgdcyaTYo9XBI3KydVP0Dmdu8eXr7dnZmgU1s4uYgBZBSFpCrSrBWYA3FeoE5BYVkX8M9OEBWx518Pe4+TvWjbf59g4Jo7CXNgaPq8hpyrbL0fz2dBmrsbpkvxqwqEPF+q/bprAvIpULuiKQxDHvOSNiYTdDHae3tYT/YswmWB1k9Uq+DTjib+Oa7XvFAKmkOT0eH5/XTbbb6d61A9550ym92JqI+Ggt89lb6IJPmMHzQIhp0e3HcGBQVyDy/G7x6piUmycOf7cpl1ogFgUT1yHkf7CrfV+VKOPsnP0pjE5S7M/17/iL2ANBw62tHXcY5wv34ZflD1VQAAGllNJ7OfhjbZFR6F7qtzM/guFcacN6kuUhrph4ZH5HniXh28c0z+Xm4ipkA7oNAQlIoiwOjBAFaNcAaANfPRIGgBcCi1IPTVgzorNvL19QASZycQAEAgwsKi1xlZ2dDWZxqHRUA57ZNssaeOWKem+E1CgSiWxT+tJEyAAVcxWsI1E/nvN7yCvm1lla2TCi320A071O0+Qg3sTb+A1Xsp8tNyaMVAAAAAElFTkSuQmCC" alt=""><h1>Gestion Locative</h1></header>
+  <div class="nav-tabs">
+    <button id="tabPaiement" class="nav-tab active" onclick="changerOnglet('ongletPaiement',this)"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAGFBMVEX////+/v77+/vQ0NB/f39YWFhHR0clJSW7E0bEAAACGElEQVR42u1Uy27TUBA91w6iQXV8bxJagUTqBIlSCUVpQ4PYIIsmdFuU7tjx+ILyGaxY8/gBkNgi8RBiVakkZEMFqhs3USUSkfjaSURaFJuN0+Yaiy/I2dlzZsZz5oyBKab4HyQmPJJAmEquE+OT/GB+rL8hJAUIJNa8n7En38giQWtuNowz5KIV9nWEkrS0flua0zWw0BYsXS8pGbeTbxapFjIFYd1CtscVyBTb3Py3Aumu3uq13iUuj/ZenLaI+EGPMDep10b9csegHzMLdeIJFRhjsf7dWlZedqV0L1tP2JQJY85AbZbNFe4ds8Od2r2z0Z9DSyAczbRLi9FvdrS7U+Xu8ZL5JXokTEHYas6rrngVi1DAStJfBueTBAmP64Jq8bc+wW9BSOH5n6vDcXj0uq+AT46pOtDilZN8XQK3BR24hMbmEwAl9RWAZAqUQ2xx81Lnt6MtXmlvfJ93SLk14kORsDT3MpFq688MZdDMHQ7UgU843UUnfb1oK/F0TS2uxash65YOLnwmpmq79NrTmBbmh4VICipgo6E7YZ509z+N1ES9u2x/nd03g54kRFcGld15Vz23/qazKz8wx1NExkzvw5oDvN/Ctgac3yM8YFh5C3cAQM4BwEPc0KigJHU8HDwigGcXAMyCj6U8kVrK+1UtAEY+2eKiJ9VGHp6/e04ZvB88cDTBM2I0cBcsQLCmP8IpQvAXevS5aeEZFagAAAAASUVORK5CYII=" alt="">Paiement &amp; Reçu</button>
+    <button id="tabBord" class="nav-tab" onclick="changerOnglet('ongletTableauBord',this)"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAGFBMVEX////8/Pzi4uKHh4cpKSkDAwMBAQEAAABac7WtAAAA/ElEQVR42u2TQW7CMBBF/5iyjtNygIgDVJFYdN9b9whdIKQuCcoJKJmwJ9NFwcmMbRD7zCZ2/PQ1/48NzDXXE0XXj49OhBVX2vPSKBRvWkN28r94uf44f9QKuJyYFUDvrQKcZ62Afq2ALpC3hU+6myh0pACOgFfjcm+BNpPkDZCtORjM3mdmEJKkTwC/i5E72KA2AL4WmwAcOdXkELfqHt2HoLAG0Lgx7yZlk1fbOMqpTbpnswIgE2JI2WyW1dgDJ5t0Va5JnAgMkS477pLQg6i0F8ZlbEmkULQAhpC1M4Dvf2qV5OU79XAm45Zd8eDpeW9dmCTHNuea64n6AwvORje5QdJQAAAAAElFTkSuQmCC" alt="">Tableau de Bord</button>
+  </div>
+  <div class="container">
+    <div id="ongletPaiement" class="tab-content active">
+      <div class="card">
+        <h2 class="card-title">Enregistrer un Versement</h2>
+        <label>Nom du propriétaire (pour le reçu)</label><input type="text" id="proprio" placeholder="Ex: M. Agbodjan" oninput="saveProprio()">
+        <label>Locataire</label>
+        <select id="choix" onchange="choisir()"><option value="">+ Nouveau locataire</option></select>
+        <label>Nom du locataire</label><input type="text" id="nom" placeholder="Ex: Koffi Mensah">
+        <label>Téléphone</label><input type="tel" inputmode="tel" id="tel" placeholder="Ex: 90 00 00 00">
+        <label>Appartement / Porte</label><input type="text" id="appt" placeholder="Ex: A1">
+        <label>Paiement mensuel (loyer, en FCFA)</label><input type="text" inputmode="numeric" pattern="[0-9]*" id="loyer" placeholder="Ex: 40000" oninput="majAvHint()">
+        <label>Avance à payer</label>
+        <div class="row2">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="avance" placeholder="Ex: 3" style="flex:1;width:auto" oninput="majAvHint()">
+          <select id="avanceMode" style="width:46%" onchange="majAvHint()"><option value="mois">mois de loyer</option><option value="fcfa">FCFA</option></select>
+        </div>
+        <div class="hint" id="avHint"></div>
+        <label>Date d'entrée</label><input type="date" id="entree">
+        <div class="sub">Versement</div>
+        <label>Somme payée aujourd'hui (FCFA)</label><input type="text" inputmode="numeric" pattern="[0-9]*" id="paye" placeholder="Ex: 120000" oninput="majPayeHint()">
+        <div class="hint" id="payeHint"></div>
+        <button class="btn" onclick="enregistrer()">Valider &amp; Générer le Reçu</button>
+      </div>
+      <div id="zoneQuittance"></div>
+      <div id="recuActions" style="display:none;margin-top:10px">
+        <select id="histo" onchange="histoChange()"></select>
+        <button class="btn btn-success" style="margin-top:0" onclick="telechargerPDF()">⬇️ Télécharger le reçu (PDF)</button>
+        <div class="row2" style="margin-top:8px">
+          <button class="btn" style="background:#B08D57" onclick="ouvrirCorrection()">✏️ Corriger le montant</button>
+          <button class="btn" id="btnAnnul" style="background:#9CA3AF" onclick="annulerVersement()">Annuler ce versement</button>
+        </div>
+        <div id="editBox" style="display:none;margin-top:10px">
+          <label>Nouveau montant versé (FCFA)</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="newMontant">
+          <button class="btn" onclick="validerCorrection()">Enregistrer la correction</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="ongletTableauBord" class="tab-content">
+      <div class="sum">
+        <div><span>Locataires</span><b id="sNb">0</b></div>
+        <div><span>Reste à payer total</span><b id="sReste" class="nw">0 F</b></div>
+      </div>
+      <div id="rappels"></div>
+      <input type="search" id="recherche" placeholder="🔍 Rechercher un locataire (nom, téléphone)" oninput="render()">
+      <div id="liste"></div>
+      <div class="card" style="margin-top:8px">
+        <label>Rappeler combien de jours avant la fin du mois ?</label>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" id="delai" value="5" onchange="saveDelai()">
+      </div>
+      <div class="card">
+        <h2 class="card-title">Messages WhatsApp</h2>
+        <label>Message pour une dette (en retard)</label>
+        <select id="mode_late" onchange="saveMode('late')"></select>
+        <div class="hint" id="prev_late" style="margin:-6px 0 8px"></div>
+        <textarea id="msg_late" rows="3" oninput="saveMsg('late')" style="display:none"></textarea>
+        <label>Message de rappel avant la fin du mois</label>
+        <select id="mode_soon" onchange="saveMode('soon')"></select>
+        <div class="hint" id="prev_soon" style="margin:-6px 0 8px"></div>
+        <textarea id="msg_soon" rows="3" oninput="saveMsg('soon')" style="display:none"></textarea>
+        <div class="hint" style="margin:0">Pour « Mon message personnalisé », mots utilisables : {nom} {appt} {reste} {mois} {loyer} {apayer}</div>
+      </div>
+      <div class="card">
+        <h2 class="card-title">Sauvegarde &amp; application</h2>
+        <div id="backupInfo"></div>
+        <button class="btn" onclick="exporterSauvegarde()">💾 Exporter une sauvegarde</button>
+        <button class="btn-sec" onclick="$('fichierImport').click()">📂 Restaurer une sauvegarde</button>
+        <input type="file" id="fichierImport" accept=".json,application/json" style="display:none" onchange="importerSauvegarde(this)">
+        <button class="btn-sec" id="btnInstall" style="display:none" onclick="installer()">📲 Installer l'application</button>
+        <div class="hint" id="iosHint" style="display:none">Sur iPhone : touche Partager, puis « Sur l'écran d'accueil ».</div>
+        <div class="hint" id="persistInfo"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="rappelModal"><div>
+  <h3 style="margin:0 0 10px;color:var(--primary)">🔔 Rappels de paiement</h3>
+  <div id="rappelBody"></div>
+  <button class="btn" style="margin-top:8px" onclick="$('rappelModal').style.display='none';changerOnglet('ongletTableauBord',$('tabBord'))">Voir le tableau de bord</button>
+  <button class="btn" style="margin-top:8px;background:#9CA3AF" onclick="$('rappelModal').style.display='none'">Fermer</button>
+</div></div>
+<div id="sheet"><div>
+  <div id="sheetNom" style="color:#6B7280"></div><div class="num" id="sheetNum"></div>
+  <a id="sheetTel" href="#" target="_top" style="background:#0284c7">📞 Appel direct</a>
+  <button id="copieBtn" onclick="copier()" style="background:var(--primary)">Copier le numéro</button>
+  <a id="sheetWa" href="#" target="_blank" rel="noopener" style="background:#16a34a">💬 Écrire sur WhatsApp</a>
+  <button onclick="$('sheet').style.display='none'" style="background:#9CA3AF">Fermer</button>
+</div></div>
+<div id="toast"></div>
+<script>
+const KEY='loyers_v2';
+let tenants=[],cur=null;
+try{tenants=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){tenants=[]}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(tenants));localStorage.setItem('loyers_last_change',String(Date.now()))}
+  catch(e){toast('⚠️ Enregistrement impossible sur cet appareil : exporte une sauvegarde !')}
+  idbPut();majBackupInfo();
+}
+/* Copie de secours dans IndexedDB (2e emplacement, indépendant de localStorage) */
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('loyers_db',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbPut(){try{const db=await idbOpen();db.transaction('kv','readwrite').objectStore('kv').put({tenants,delai:localStorage.getItem('loyers_delai')||'5',at:Date.now()},'data')}catch(e){}}
+async function idbGet(){try{const db=await idbOpen();return await new Promise((res,rej)=>{const r=db.transaction('kv').objectStore('kv').get('data');r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}catch(e){return null}}
+async function initStorage(){
+  if(!tenants.length){
+    const d=await idbGet();
+    if(d&&Array.isArray(d.tenants)&&d.tenants.length){
+      tenants=d.tenants;try{localStorage.setItem(KEY,JSON.stringify(tenants));if(d.delai){localStorage.setItem('loyers_delai',d.delai);$('delai').value=d.delai}}catch(e){}
+      majSelect();render();toast('Données récupérées depuis la copie de secours ✔');
+    }
+  }else if(!(await idbGet())){idbPut()}
+  majBackupInfo();
+}
+/* Sauvegarde manuelle (fichier .json) */
+const fmtDate=ts=>new Date(Number(ts)).toLocaleDateString('fr-FR');
+function majBackupInfo(){
+  const el=$('backupInfo');if(!el)return;
+  const lb=Number(localStorage.getItem('loyers_last_backup')||0),lc=Number(localStorage.getItem('loyers_last_change')||0);
+  const vieux=tenants.length&&lc>lb&&(!lb||Date.now()-lb>7*864e5);
+  el.className=vieux?'warn':'';
+  el.textContent=lb?('Dernière sauvegarde exportée : '+fmtDate(lb)+(vieux?' — pense à en refaire une.':'')):(tenants.length?'Aucune sauvegarde exportée pour l’instant — fais-en une.':'Aucune sauvegarde exportée.');
+}
+function markBackup(){try{localStorage.setItem('loyers_last_backup',String(Date.now()))}catch(e){}majBackupInfo()}
+async function exporterSauvegarde(){
+  const name='sauvegarde-loyers-'+today()+'.json';
+  const blob=new Blob([JSON.stringify({app:'loyers',version:2,date:new Date().toISOString(),delai:delai(),proprio:proprio(),msgLate:msgCustom('late'),msgSoon:msgCustom('soon'),modeLate:msgMode('late'),modeSoon:msgMode('soon'),tenants},null,1)],{type:'application/json'});
+  try{const f=new File([blob],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'Sauvegarde Loyers'});markBackup();toast('Sauvegarde exportée ✔');return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);markBackup();toast('Sauvegarde téléchargée ✔');
+}
+function importerSauvegarde(inp){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    let d,arr;
+    try{d=JSON.parse(r.result);arr=Array.isArray(d)?d:d.tenants;
+      if(!Array.isArray(arr)||arr.some(t=>!t||typeof t!=='object'||!('nom' in t)||!('loyer' in t)||!Array.isArray(t.paiements)))throw 0}
+    catch(e){toast('Fichier de sauvegarde invalide.');return}
+    if(!confirm('Remplacer les '+tenants.length+' locataire(s) actuel(s) par les '+arr.length+' de la sauvegarde ?'))return;
+    tenants=arr;cur=null;
+    if(d&&(d.msgLate!==undefined||d.msgSoon!==undefined)){try{localStorage.setItem('loyers_msg_late',d.msgLate||'');localStorage.setItem('loyers_msg_soon',d.msgSoon||'')}catch(e){}if(d.modeLate)localStorage.setItem('loyers_mode_late',d.modeLate);if(d.modeSoon)localStorage.setItem('loyers_mode_soon',d.modeSoon);initMsgUI()}
+    if(d&&d.proprio){try{localStorage.setItem('loyers_proprio',d.proprio)}catch(e){}$('proprio').value=d.proprio}
+    if(d&&d.delai){$('delai').value=d.delai;try{localStorage.setItem('loyers_delai',String(d.delai))}catch(e){}}
+    save();markBackup();majSelect();render();$('zoneQuittance').style.display='none';$('recuActions').style.display='none';toast('Sauvegarde restaurée ✔');
+  };
+  r.readAsText(f);
+}
+/* Installation PWA */
+let dip=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;const b=$('btnInstall');if(b)b.style.display='block'});
+window.addEventListener('appinstalled',()=>{dip=null;const b=$('btnInstall');if(b)b.style.display='none'});
+async function installer(){if(!dip)return;dip.prompt();try{await dip.userChoice}catch(e){}dip=null;$('btnInstall').style.display='none'}
+/* WhatsApp : seule fonction qui exige Internet */
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="https://wa.me"]');if(a&&!navigator.onLine){e.preventDefault();toast('Connexion Internet requise pour envoyer par WhatsApp.')}});
+const $=id=>document.getElementById(id);
+const F=n=>Math.round(n).toLocaleString('fr-FR').replace(/\s/g,'\u202f')+'\u00a0F';
+const plain=s=>String(s).replace(/[\u202f\u00a0]/g,' ');
+const MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const num=v=>parseInt(String(v).replace(/\D/g,''),10);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+function enLettres(n){
+  n=Math.floor(n);if(!n)return 'zéro';
+  const u=['','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
+  const d=['','','vingt','trente','quarante','cinquante','soixante'];
+  const b100=(x,fin)=>{
+    if(x<20)return u[x];
+    if(x<70){const t=Math.floor(x/10),r=x%10;return d[t]+(r===1?' et un':r?'-'+u[r]:'')}
+    if(x<80){const r=x-60;return 'soixante'+(r===11?' et onze':'-'+u[r])}
+    const r=x-80;return r===0?'quatre-vingt'+(fin?'s':''):'quatre-vingt-'+u[r];
+  };
+  const b1000=(x,fin)=>{
+    const c=Math.floor(x/100),r=x%100;let o='';
+    if(c>0)o=c===1?'cent':u[c]+' cent'+(r===0&&fin?'s':'');
+    if(r>0)o+=(o?' ':'')+b100(r,fin);
+    return o;
+  };
+  const mi=Math.floor(n/1e6),th=Math.floor(n%1e6/1000),re=n%1000,o=[];
+  if(mi)o.push(b1000(mi,false)+' million'+(mi>1?'s':''));
+  if(th)o.push(th===1?'mille':b1000(th,false)+' mille');
+  if(re)o.push(b1000(re,true));
+  return o.join(' ');
+}
+function eqMois(x,l){
+  if(!l)return '0 mois';const r=Math.round(x/l*10)/10;
+  return String(r).replace('.',',')+' mois';
+}
+const proprio=()=>{try{return localStorage.getItem('loyers_proprio')||''}catch(e){return ''}};
+function saveProprio(){try{localStorage.setItem('loyers_proprio',$('proprio').value.trim())}catch(e){}}
+function majAvHint(){
+  const l=num($('loyer').value),a=num($('avance').value),h=$('avHint');
+  if(isNaN(a)||!a){h.textContent='';return}
+  if($('avanceMode').value==='mois'){h.textContent=isNaN(l)?'Entre le paiement mensuel pour calculer la somme.':a+' mois × '+F(l)+' = '+F(a*l)}
+  else h.textContent=(isNaN(l)||!l)?'':'Équivaut à '+eqMois(a,l)+' de loyer';
+}
+function majPayeHint(){
+  const p=num($('paye').value),h=$('payeHint');
+  h.textContent=(isNaN(p)||!p)?'':cap(enLettres(p))+' francs CFA';
+}
+function labelMois(y,m0){const d=new Date(y,m0,1);return MOIS[d.getMonth()]+' '+d.getFullYear()}
+function phone(t){let d=String(t||'').replace(/[^\d+]/g,'');if(!d)return '';if(d[0]==='+')return d;if(d.length<=8)return '+228'+d;return '+'+d}
+let tt;function toast(m){const e=$('toast');e.textContent=m;e.style.display='block';clearTimeout(tt);tt=setTimeout(()=>e.style.display='none',3500)}
+try{const d=localStorage.getItem('loyers_delai');if(d)$('delai').value=d}catch(e){}
+function delai(){const n=num($('delai').value);return isNaN(n)?5:n}
+function saveDelai(){try{localStorage.setItem('loyers_delai',String(delai()))}catch(e){}render()}
+
+function calc(t,paid){
+  const now=new Date();
+  const [ey,em]=t.entree.split('-').map(Number);
+  const diff=(now.getFullYear()-ey)*12+(now.getMonth()+1-em);
+  const last=new Date(now.getFullYear(),now.getMonth()+1,0).getDate()===now.getDate();
+  const moisDus=diff<=0?1:diff+(last?1:0);
+  const moisCourant=diff<=0?1:diff+1;
+  const avPaye=Math.min(paid,t.avance);
+  const loyerPaye=paid-avPaye;
+  const dueLoyer=moisDus*t.loyer;
+  const reste=(t.avance-avPaye)+Math.max(0,dueLoyer-loyerPaye);
+  const credit=Math.max(0,loyerPaye-dueLoyer);
+  const moisPayes=Math.floor(loyerPaye/t.loyer);
+  const jusqua=moisPayes>0?labelMois(ey,em-1+moisPayes-1):'-';
+  const besoinCourant=Math.max(0,moisCourant*t.loyer-loyerPaye);
+  return {paid,avPaye,loyerPaye,moisDus,reste,credit,moisPayes,jusqua,moisAvance:Math.floor(credit/t.loyer),besoinCourant};
+}
+const totalPaye=t=>t.paiements.reduce((s,p)=>s+p.montant,0);
+function recompute(t,from){
+  let cum=0;
+  t.paiements.forEach((p,i)=>{const prev=cum;cum+=p.montant;
+    if(i>=from){p.partAvance=Math.min(p.montant,Math.max(0,t.avance-prev));p.partLoyer=p.montant-p.partAvance;p.snap=calc(t,cum)}});
+}
+
+function ouvrirApp(){
+  $('splashScreen').style.display='none';$('mainApp').style.display='block';
+  const r=listeRappels();
+  if(r.late.length||r.soon.length){$('rappelBody').innerHTML=rapBlocks(r);$('rappelModal').style.display='flex'}
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().then(ok=>{const p=$('persistInfo');if(p)p.textContent=ok?'Stockage protégé contre le nettoyage automatique ✔':'Stockage non protégé : installe l’app et exporte des sauvegardes régulières.'})}catch(e){}
+  const lb=Number(localStorage.getItem('loyers_last_backup')||0),lc=Number(localStorage.getItem('loyers_last_change')||0);
+  if(tenants.length&&lc>lb&&(!lb||Date.now()-lb>7*864e5))setTimeout(()=>toast('💾 Pense à exporter une sauvegarde (Tableau de bord).'),r.late.length||r.soon.length?0:800);
+}
+function changerOnglet(id,el){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));$(id).classList.add('active');el.classList.add('active')}
+
+function majSelect(){
+  const s=$('choix'),v=s.value;
+  s.innerHTML='<option value="">+ Nouveau locataire</option>'+tenants.map(t=>`<option value="${t.id}">${esc(t.appt?t.appt+' — ':'')}${esc(t.nom)}</option>`).join('');
+  s.value=v;
+}
+function viderForm(){['nom','tel','appt','loyer','avance','paye'].forEach(i=>$(i).value='');$('avanceMode').value='mois';$('entree').value=today();majAvHint();majPayeHint()}
+function choisir(){
+  const t=tenants.find(x=>x.id==$('choix').value);
+  if(!t){viderForm();return}
+  $('nom').value=t.nom;$('tel').value=t.tel;$('appt').value=t.appt;$('loyer').value=t.loyer;
+  $('avance').value=t.aVal!==undefined?t.aVal:t.avance;$('avanceMode').value=t.aMode||'fcfa';
+  $('entree').value=t.entree;$('paye').value='';majAvHint();majPayeHint();
+}
+
+function enregistrer(){
+  const nom=$('nom').value.trim(),tel=$('tel').value.trim(),appt=$('appt').value.trim();
+  const loyer=num($('loyer').value),paye=num($('paye').value),entree=$('entree').value||today();
+  const aVal=isNaN(num($('avance').value))?0:num($('avance').value),aMode=$('avanceMode').value;
+  if(!nom||!loyer||isNaN(paye)||paye<=0){toast("Remplis au moins le nom, le loyer et le montant versé.");return}
+  const avance=aMode==='mois'?aVal*loyer:aVal;
+  let t=tenants.find(x=>x.id==$('choix').value);
+  let changed=false;
+  if(!t){t={id:Date.now(),paiements:[]};tenants.push(t)}
+  else changed=(t.loyer!==loyer||t.avance!==avance||t.entree!==entree);
+  Object.assign(t,{nom,tel,appt,loyer,avance,entree,aVal,aMode});
+  if(changed)recompute(t,0);
+  const avant=totalPaye(t);
+  const partAvance=Math.min(paye,Math.max(0,avance-avant));
+  const n=t.paiements.reduce((m,x)=>Math.max(m,x.n),0)+1;
+  const p={n,date:new Date().toLocaleDateString('fr-FR'),montant:paye,partAvance,partLoyer:paye-partAvance,proprio:proprio()};
+  t.paiements.push(p);
+  p.snap=calc(t,totalPaye(t));
+  save();majSelect();$('choix').value=t.id;
+  afficherRecu(t,p);render();
+}
+
+function afficherRecu(t,p){
+  cur={t,p};const s=p.snap;
+  const situation=s.reste>0?`<tr><td>Dette (impayé)</td><td style="color:#991B1B">${F(s.reste)}<br><small style="font-weight:400">≈ ${eqMois(s.reste,t.loyer)} de loyer</small></td></tr>`
+    :(s.credit>0?`<tr><td>Crédit (avance de loyer)</td><td style="color:#065F46">${F(s.credit)}${s.moisAvance?' ('+s.moisAvance+' mois)':''}</td></tr>`
+    :`<tr><td>Situation</td><td style="color:#065F46">Soldé</td></tr>`);
+  $('zoneQuittance').innerHTML=`
+  <div style="display:flex;justify-content:space-between;gap:8px;border-bottom:2px solid #6B3433;padding-bottom:8px;margin-bottom:10px">
+    <strong style="color:#6B3433;font-size:1.05rem">REÇU DE LOYER N°${String(t.id).slice(-4)}-${p.n}</strong><span class="nw">${p.date}</span></div>
+  <div>Nom du propriétaire : <strong>${esc(p.proprio||proprio()||'—')}</strong></div>
+  <div>Nom du locataire : <strong>${esc(t.nom)}</strong></div>
+  ${t.appt?`<div>Appartement : <strong>${esc(t.appt)}</strong></div>`:''}
+  <div style="margin-top:8px">Somme payée :</div>
+  <div class="big">${F(p.montant)}</div>
+  <div style="font-style:italic;margin-bottom:6px">${cap(enLettres(p.montant))} francs CFA</div>
+  <h4>Répartition du versement</h4>
+  <table>
+    <tr><td>Avance</td><td>${F(p.partAvance)}</td></tr>
+    <tr><td>Loyer</td><td>${F(p.partLoyer)}</td></tr>
+  </table>
+  <h4>Situation du compte</h4>
+  <table>
+    <tr><td>Loyer mensuel</td><td>${F(t.loyer)}</td></tr>
+    <tr><td>Avance exigée</td><td>${F(t.avance)}${t.aMode==='mois'?' ('+t.aVal+' mois)':''}</td></tr>
+    <tr><td>Avance payée</td><td>${F(s.avPaye)} / ${F(t.avance)}</td></tr>
+    <tr><td>Total versé</td><td>${F(s.paid)}</td></tr>
+    <tr><td>Mois de loyer payés</td><td>${s.moisPayes} mois</td></tr>
+    <tr><td>Payé jusqu'à</td><td>${s.jusqua}</td></tr>
+    <tr><td>Mois dus à ce jour</td><td>${s.moisDus} mois</td></tr>
+    ${situation}
+  </table>
+  <div style="display:flex;justify-content:space-between;margin-top:30px;text-align:center;font-size:.8rem">
+    <div style="width:45%">Signature du Locataire<div style="height:45px;border-bottom:1px solid #999"></div></div>
+    <div style="width:45%">Signature du Propriétaire<div style="height:45px;border-bottom:1px solid #999"></div></div>
+  </div>`;
+  $('zoneQuittance').style.display='block';$('recuActions').style.display='block';$('editBox').style.display='none';
+  const h=$('histo');
+  h.innerHTML=t.paiements.map((x,i)=>`<option value="${i}">Reçu ${x.n} · ${x.date} · ${F(x.montant)}</option>`).join('');
+  h.value=t.paiements.indexOf(p);h.style.display=t.paiements.length>1?'block':'none';
+  $('zoneQuittance').scrollIntoView({behavior:'smooth'});
+}
+function histoChange(){if(!cur)return;afficherRecu(cur.t,cur.t.paiements[+$('histo').value])}
+function voirRecu(id){
+  const t=tenants.find(x=>x.id==id);if(!t||!t.paiements.length)return;
+  changerOnglet('ongletPaiement',$('tabPaiement'));
+  afficherRecu(t,t.paiements[t.paiements.length-1]);
+}
+function ouvrirCorrection(){if(!cur)return;$('newMontant').value=cur.p.montant;$('editBox').style.display='block';$('newMontant').focus()}
+function validerCorrection(){
+  const v=num($('newMontant').value);if(isNaN(v)||v<=0){toast('Montant invalide.');return}
+  const {t,p}=cur;p.montant=v;recompute(t,t.paiements.indexOf(p));save();render();afficherRecu(t,p);toast('Versement corrigé.');
+}
+let annulTimer;
+function annulerVersement(){
+  const b=$('btnAnnul');
+  if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer l\'annulation ?';b.style.background='#991B1B';
+    clearTimeout(annulTimer);annulTimer=setTimeout(()=>{b.dataset.arm='';b.textContent='Annuler ce versement';b.style.background='#9CA3AF'},4000);return}
+  clearTimeout(annulTimer);b.dataset.arm='';b.textContent='Annuler ce versement';b.style.background='#9CA3AF';
+  const {t,p}=cur;const i=t.paiements.indexOf(p);t.paiements.splice(i,1);recompute(t,i);save();render();
+  if(t.paiements.length)afficherRecu(t,t.paiements[Math.min(i,t.paiements.length-1)]);
+  else{$('zoneQuittance').style.display='none';$('recuActions').style.display='none';cur=null}
+  toast('Versement annulé.');
+}
+
+/* Générateur PDF intégré : aucune bibliothèque externe, fonctionne 100 % hors ligne */
+const PW={F1:[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,556,222,556,333,1000,556,556,333,1000,667,333,1000,556,611,556,556,222,222,333,333,350,556,1000,333,1000,500,333,944,556,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500],F2:[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,556,611,278,556,500,1000,556,556,333,1000,667,333,1000,611,611,611,611,278,278,500,500,350,556,1000,333,1000,556,333,944,611,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556]};
+function pdfEnc(s){
+  const mp={'€':128,'…':133,'‘':145,'’':146,'“':147,'”':148,'•':149,'–':150,'—':151,'≈':126};
+  let o='';
+  for(const ch of String(s)){let c=ch.charCodeAt(0);if(mp[ch]!==undefined)c=mp[ch];else if(c>255||c<32)c=63;o+=String.fromCharCode(c)}
+  return o;
+}
+function pdfW(s,f,sz){const t=f==='F2'?PW.F2:PW.F1;let w=0;for(const ch of pdfEnc(s))w+=t[ch.charCodeAt(0)-32]||556;return w*sz/1000}
+function MiniPDF(){
+  const K=72/25.4,ops=[];
+  const X=v=>(v*K).toFixed(2),Y=v=>((297-v)*K).toFixed(2);
+  const esc=s=>pdfEnc(s).replace(/[\\()]/g,'\\$&');
+  const col=c=>c.map(v=>(v/255).toFixed(3)).join(' ');
+  const api={
+    width:(s,f,sz)=>pdfW(s,f,sz)/K,
+    opacity(v){ops.push(v<1?'/GS1 gs':'/GS0 gs')},
+    fillRect(x,y,w,h,c){ops.push(col(c)+' rg '+X(x)+' '+Y(y+h)+' '+(w*K).toFixed(2)+' '+(h*K).toFixed(2)+' re f')},
+    line(x1,y1,x2,y2,c,lw){ops.push(col(c)+' RG '+((lw||.3)*K).toFixed(2)+' w '+X(x1)+' '+Y(y1)+' m '+X(x2)+' '+Y(y2)+' l S')},
+    text(s,x,y,o){o=o||{};const f=o.font||'F1',sz=o.size||11,c=o.color||[0,0,0];
+      const w=pdfW(s,f,sz)/K;if(o.align==='right')x-=w;else if(o.align==='center')x-=w/2;
+      const a=(o.angle||0)*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a);
+      ops.push('BT /'+f+' '+sz+' Tf '+col(c)+' rg '+ca.toFixed(5)+' '+sa.toFixed(5)+' '+(-sa).toFixed(5)+' '+ca.toFixed(5)+' '+X(x)+' '+Y(y)+' Tm ('+esc(s)+') Tj ET');
+      return w},
+    wrap(s,f,sz,max){const L=[];let cur='';String(s).split(' ').forEach(w=>{const t=cur?cur+' '+w:w;if(api.width(t,f,sz)>max&&cur){L.push(cur);cur=w}else cur=t});if(cur)L.push(cur);return L},
+    build(){
+      const st=ops.join('\n');
+      const ob=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+        '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> /ExtGState << /GS0 8 0 R /GS1 9 0 R >> >> >>',
+        '<< /Length '+st.length+' >>\nstream\n'+st+'\nendstream',
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>',
+        '<< /Type /ExtGState /ca 1 /CA 1 >>','<< /Type /ExtGState /ca 0.13 /CA 0.13 >>'];
+      let out='%PDF-1.4\n';const off=[];
+      ob.forEach((o,i)=>{off.push(out.length);out+=(i+1)+' 0 obj\n'+o+'\nendobj\n'});
+      const x=out.length;
+      out+='xref\n0 '+(ob.length+1)+'\n0000000000 65535 f \n'+off.map(v=>String(v).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size '+(ob.length+1)+' /Root 1 0 R >>\nstartxref\n'+x+'\n%%EOF';
+      const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;
+      return new Blob([u],{type:'application/pdf'});
+    }
+  };
+  return api;
+}
+function telechargerPDF(){
+  if(!cur)return;
+  const {t,p}=cur,s=p.snap;
+  const n=x=>plain(Math.round(x).toLocaleString('fr-FR'))+' FCFA';
+  const d=MiniPDF(),W=210,m=18;let y;
+  d.opacity(.13);
+  {const th=35*Math.PI/180,ux=Math.cos(th),uy=-Math.sin(th),vx=Math.sin(th),vy=Math.cos(th),cx=W/2,cy=148;
+   [['REÇU DE PAIEMENT',-11],['DE LOYER',11]].forEach(([tx,off])=>{const w=d.width(tx,'F2',50);d.text(tx,cx+vx*off-ux*w/2,cy+vy*off-uy*w/2,{font:'F2',size:50,color:[120,120,120],angle:35})})}
+  d.opacity(1);
+  d.fillRect(0,0,W,30,[107,52,51]);
+  d.text('REÇU DE LOYER',m,19,{font:'F2',size:20,color:[255,255,255]});
+  d.text('N° '+String(t.id).slice(-4)+'-'+p.n,W-m,19,{size:10,color:[255,255,255],align:'right'});
+  y=44;
+  const line=(a,b,c)=>{d.text(a,m,y,{size:11});d.text(b,W-m,y,{font:'F2',size:11,color:c||[0,0,0],align:'right'});d.line(m,y+2.5,W-m,y+2.5,[220,220,220],.2);y+=9};
+  const title=x=>{y+=5;d.text(x.toUpperCase(),m,y,{font:'F2',size:10,color:[107,52,51]});y+=7};
+  line('Date',p.date);
+  line('Nom du propriétaire',p.proprio||proprio()||'—');
+  line('Nom du locataire',t.nom);
+  if(t.appt)line('Appartement / Porte',t.appt);
+  if(t.tel)line('Téléphone',t.tel);
+  y+=4;d.text('Somme payée',m,y,{size:11});d.text(n(p.montant),W-m,y+1,{font:'F2',size:20,align:'right'});y+=8;
+  const lt=d.wrap('En lettres : '+cap(enLettres(p.montant))+' francs CFA','F3',10,W-2*m);
+  lt.forEach((l,i)=>d.text(l,m,y+i*5,{font:'F3',size:10,color:[60,60,60]}));y+=lt.length*5+4;
+  title('Répartition du versement');
+  line('Avance',n(p.partAvance));line('Loyer',n(p.partLoyer));
+  title('Situation du compte');
+  line('Loyer mensuel',n(t.loyer));
+  line('Avance exigée',n(t.avance)+(t.aMode==='mois'?' ('+t.aVal+' mois)':''));
+  line('Avance payée',n(s.avPaye)+' / '+n(t.avance));
+  line('Total versé',n(s.paid));
+  line('Mois de loyer payés',s.moisPayes+' mois');
+  line("Payé jusqu'à",s.jusqua);
+  line('Mois dus à ce jour',s.moisDus+' mois');
+  if(s.reste>0)line('Dette (impayé)',n(s.reste)+' (soit env. '+eqMois(s.reste,t.loyer)+' de loyer)',[153,27,27]);
+  else if(s.credit>0)line('Crédit (avance de loyer)',n(s.credit)+(s.moisAvance?' ('+s.moisAvance+' mois)':''),[6,95,70]);
+  else line('Situation','Soldé',[6,95,70]);
+  y=Math.max(y+30,225);
+  d.line(m,y,m+70,y,[120,120,120],.3);d.text('Signature du locataire',m+35,y+6,{size:10,align:'center'});
+  d.line(W-m-70,y,W-m,y,[120,120,120],.3);d.text('Signature du propriétaire',W-m-35,y+6,{size:10,align:'center'});
+  d.text('Reçu à imprimer et signer par les deux parties.',W/2,285,{size:8,color:[140,140,140],align:'center'});
+  const nomF=(t.nom||'locataire').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const filename='recu-'+nomF+'-'+p.date.replace(/\//g,'-')+'-'+p.n+'.pdf';
+  const blob=d.build();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),8000);toast('Reçu PDF téléchargé ✔');
+}
+
+function appeler(id){
+  const t=tenants.find(x=>x.id==id);if(!t)return;const p=phone(t.tel);
+  try{const a=document.createElement('a');a.href='tel:'+p;a.target='_top';document.body.appendChild(a);a.click();a.remove()}catch(e){}
+  $('sheetNom').textContent=t.nom;$('sheetNum').textContent=p;$('sheetWa').href='https://wa.me/'+p.replace('+','');$('sheetTel').href='tel:'+p;
+  $('copieBtn').textContent='Copier le numéro';$('sheet').style.display='flex';
+}
+function copier(){const n=$('sheetNum').textContent;try{navigator.clipboard.writeText(n).then(()=>{$('copieBtn').textContent='Copié ✓'},()=>{toast(n)})}catch(e){toast(n)}}
+
+function waLink(t,msg){const p=phone(t.tel);return 'https://wa.me/'+p.replace('+','')+'?text='+encodeURIComponent(msg)}
+const MSG_SETS={
+  late:{
+    orig:["Message d'origine","Bonjour {nom}, rappel de loyer{appt_p} : il vous reste {reste} à payer. Merci."],
+    nouv:["Nouveau (avec l'équivalent en mois de loyer)","Bonjour {nom}, rappel de loyer{appt_p} : il vous reste {reste} à payer (≈ {mois} de loyer). Merci."]
+  },
+  soon:{
+    orig:["Message d'origine","Bonjour {nom}, rappel{appt_p} : votre loyer de ce mois ({apayer}) est à payer avant la fin du mois. Merci."]
+  }
+};
+const lsGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}};
+const msgCustom=k=>lsGet('loyers_msg_'+k).trim();
+const msgMode=k=>{const m=lsGet('loyers_mode_'+k);return(m==='perso'||MSG_SETS[k][m])?m:'orig'};
+function msgTpl(k){const m=msgMode(k);if(m==='perso'&&msgCustom(k))return msgCustom(k);return(MSG_SETS[k][m]||MSG_SETS[k].orig)[1]}
+function majMsgUI(k){
+  const m=msgMode(k);
+  $('msg_'+k).style.display=m==='perso'?'block':'none';
+  $('prev_'+k).textContent='Aperçu : '+msgTpl(k);
+}
+function initMsgUI(){
+  ['late','soon'].forEach(k=>{
+    const sel=$('mode_'+k);
+    sel.innerHTML=Object.entries(MSG_SETS[k]).map(([id,v])=>'<option value="'+id+'">'+v[0]+'</option>').join('')+'<option value="perso">Mon message personnalisé</option>';
+    sel.value=msgMode(k);$('msg_'+k).value=lsGet('loyers_msg_'+k);$('msg_'+k).placeholder=MSG_SETS[k].orig[1];
+    majMsgUI(k);
+  });
+}
+function saveMode(k){try{localStorage.setItem('loyers_mode_'+k,$('mode_'+k).value)}catch(e){}majMsgUI(k);render()}
+function saveMsg(k){try{localStorage.setItem('loyers_msg_'+k,$('msg_'+k).value)}catch(e){}majMsgUI(k);render()}
+function msgRappel(t,s,type){
+  const v={nom:t.nom,appt:t.appt||'',appt_p:t.appt?' ('+t.appt+')':'',reste:plain(F(s.reste)),mois:eqMois(s.reste,t.loyer),loyer:plain(F(t.loyer)),apayer:plain(F(s.besoinCourant))};
+  return msgTpl(type).replace(/\{(\w+)\}/g,(m,k)=>k in v?v[k]:m);
+}
+function listeRappels(){
+  const now=new Date(),last=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),jr=last-now.getDate();
+  const late=[],soon=[];
+  tenants.forEach(t=>{const s=calc(t,totalPaye(t));if(s.reste>0)late.push({t,s});else if(jr<=delai()&&s.besoinCourant>0)soon.push({t,s})});
+  return {late,soon,jr};
+}
+function rapRow(x,type){
+  const {t,s}=x,p=phone(t.tel);
+  const info=type==='late'?'Dette : '+F(s.reste)+' (≈ '+eqMois(s.reste,t.loyer)+' de loyer)':'À payer : '+F(s.besoinCourant);
+  return `<div class="rap"><div><b>${esc(t.nom)}</b>${t.appt?' · '+esc(t.appt):''}<br><small class="nw">${info}</small></div>
+    <div class="acts">${p?`<button class="a-call" onclick="appeler(${t.id})">📞</button><a class="a-wa" href="${waLink(t,msgRappel(t,s,type))}" target="_blank" rel="noopener">💬</a>`:''}</div></div>`;
+}
+function rapBlocks(r){
+  let h='';
+  if(r.late.length)h+=`<div class="box red"><h3>⚠️ En retard (${r.late.length})</h3>${r.late.map(x=>rapRow(x,'late')).join('')}</div>`;
+  if(r.soon.length)h+=`<div class="box amb"><h3>⏰ À payer avant la fin du mois (${r.soon.length}) · dans ${r.jr} jour${r.jr>1?'s':''}</h3>${r.soon.map(x=>rapRow(x,'soon')).join('')}</div>`;
+  return h;
+}
+
+function render(){
+  let totalReste=0;tenants.forEach(t=>{totalReste+=calc(t,totalPaye(t)).reste});
+  $('rappels').innerHTML=rapBlocks(listeRappels());
+  const q=($('recherche').value||'').toLowerCase().trim();
+  const vus=tenants.filter(t=>!q||(t.nom+' '+t.appt+' '+t.tel).toLowerCase().includes(q));
+  const html=vus.map(t=>{
+    const s=calc(t,totalPaye(t));
+    const badge=s.reste>0?`<span class="badge-dette">Dette : ${F(s.reste)}<br><small style="font-weight:500">≈ ${eqMois(s.reste,t.loyer)} de loyer</small></span>`
+      :(s.credit>0?`<span class="badge-solde">Avance : ${s.moisAvance} mois</span>`:`<span class="badge-solde">Soldé</span>`);
+    const p=phone(t.tel);
+    return `<div class="tenant">
+      <div class="t-head"><div>${t.appt?'<strong>'+esc(t.appt)+'</strong> · ':''}<strong>${esc(t.nom)}</strong><br><small class="nw">${esc(p||'Pas de numéro')}</small></div>${badge}</div>
+      <div class="grid">
+        <div><span>Loyer mensuel</span><b>${F(t.loyer)}</b></div>
+        <div><span>Total versé</span><b>${F(s.paid)}</b></div>
+        <div><span>Mois payés</span><b>${s.moisPayes} / ${s.moisDus} dus</b></div>
+        <div><span>Reste à payer</span><b style="color:${s.reste>0?'#991B1B':'#065F46'}">${F(s.reste)}</b>${s.reste>0?'<span>≈ '+eqMois(s.reste,t.loyer)+' de loyer</span>':''}</div>
+        <div style="grid-column:1/-1"><span>Avance</span><b>${F(s.avPaye)} / ${F(t.avance)}</b></div>
+      </div>
+      <div class="acts">
+        ${p?`<button class="a-call" onclick="appeler(${t.id})">📞 Appeler</button><a class="a-wa" href="${waLink(t,msgRappel(t,s,s.reste>0?'late':'soon'))}" target="_blank" rel="noopener">💬 WhatsApp</a>`:''}
+        <button class="a-rec" onclick="voirRecu(${t.id})">🧾 Reçu</button>
+      </div></div>`;
+  }).join('');
+  $('liste').innerHTML=html||'<div class="empty">'+(tenants.length?'Aucun résultat.':'Aucun locataire pour le moment.<br>Enregistre un premier versement.')+'</div>';
+  $('sNb').textContent=tenants.length;$('sReste').textContent=F(totalReste);
+}
+$('entree').value=today();$('proprio').value=proprio();initMsgUI();majAvHint();majPayeHint();majSelect();render();
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.navigator.standalone)$('iosHint').style.display='block';
+initStorage();
+if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
